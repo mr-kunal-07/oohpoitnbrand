@@ -1,9 +1,7 @@
 "use client";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useContext, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { IoClose, IoHomeOutline } from "react-icons/io5";
-import { MyContext } from "@/context/MyContext";
 import {
   HeartHandshake,
   ShoppingBagIcon,
@@ -18,23 +16,27 @@ import {
   StarIcon,
 } from "lucide-react";
 import { FaRegStickyNote } from "react-icons/fa";
-import { useCampaignTypes } from "@/hooks/useCampaignTypes";
+import { useCampaignTypes } from "@/hook/useCampaignTypes";
 
 const Sidebar = () => {
-  const { user, isOpen, setIsOpen, isHovered, setIsHovered } =
-    useContext(MyContext);
   const router = useRouter();
   const pathname = usePathname();
+  
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const { hasPrizeMode, hasProductMode, hasSocietyMode, bothTypes } = useCampaignTypes();
 
-  // Memoized menu list - conditionally show dashboard dropdown
-  const menuItems = useMemo(() => {
-    let dashboardItem;
+  const getDashboardItem = () => {
+    const hasAll = hasProductMode && hasPrizeMode && hasSocietyMode;
+    const hasSocietyProduct = hasSocietyMode && hasProductMode && !hasPrizeMode;
+    const hasSocietyPrize = hasSocietyMode && hasPrizeMode && !hasProductMode;
+    const hasPrizeProduct = bothTypes && !hasSocietyMode;
+    const hasSocietyOnly = hasSocietyMode && !hasProductMode && !hasPrizeMode;
+    const hasProductOnly = hasProductMode && !hasPrizeMode && !hasSocietyMode;
 
-    // If brand has all modes (Prize + Product + Society)
-    if (hasProductMode && hasPrizeMode && hasSocietyMode) {
-      dashboardItem = {
+    if (hasAll) {
+      return {
         label: "Dashboard",
         path: "/dashboard",
         icon: IoHomeOutline,
@@ -46,9 +48,8 @@ const Sidebar = () => {
       };
     }
 
-    // If brand has society + product
-    else if (hasSocietyMode && hasProductMode && !hasPrizeMode) {
-      dashboardItem = {
+    if (hasSocietyProduct) {
+      return {
         label: "Dashboard",
         path: "/dashboard",
         icon: IoHomeOutline,
@@ -59,9 +60,8 @@ const Sidebar = () => {
       };
     }
 
-    // If brand has society + prize
-    else if (hasSocietyMode && hasPrizeMode && !hasProductMode) {
-      dashboardItem = {
+    if (hasSocietyPrize) {
+      return {
         label: "Dashboard",
         path: "/dashboard",
         icon: IoHomeOutline,
@@ -72,9 +72,8 @@ const Sidebar = () => {
       };
     }
 
-    // BothTypes (Prize + Product) — no society
-    else if (bothTypes && !hasSocietyMode) {
-      dashboardItem = {
+    if (hasPrizeProduct) {
+      return {
         label: "Dashboard",
         path: "/dashboard",
         icon: IoHomeOutline,
@@ -85,35 +84,32 @@ const Sidebar = () => {
       };
     }
 
-    // Society only
-    else if (hasSocietyMode && !hasProductMode && !hasPrizeMode) {
-      dashboardItem = {
+    if (hasSocietyOnly) {
+      return {
         label: "Dashboard",
-        path: "/dashboard",
+        path: "/dashboard/society",
         icon: IoHomeOutline,
       };
     }
 
-    // Product mode only
-    else if (hasProductMode && !hasPrizeMode && !hasSocietyMode) {
-      dashboardItem = {
+    if (hasProductOnly) {
+      return {
         label: "Dashboard",
         path: "/dashboard/sampling",
         icon: IoHomeOutline,
       };
     }
 
-    // Prize mode only
-    else {
-      dashboardItem = {
-        label: "Dashboard",
-        path: "/dashboard",
-        icon: IoHomeOutline,
-      };
-    }
+    return {
+      label: "Dashboard",
+      path: "/dashboard",
+      icon: IoHomeOutline,
+    };
+  };
 
+  const menuItems = useMemo(() => {
     return [
-      dashboardItem,
+      getDashboardItem(),
       { label: "Campaigns", path: "/campaigns", icon: ShoppingBagIcon },
       {
         label: "Offers",
@@ -124,25 +120,22 @@ const Sidebar = () => {
           { label: "List Product/Services", path: "/offers/list", icon: ListChecks },
         ],
       },
-      {
-        label: "GIG",
-        path: "/gig",
-        icon: StarIcon,
-        children: [
-          { label: "GIG Dashboard", path: "/gig", icon: Layers },
-          { label: "Post Internship/Job", path: "/gig/Jobs", icon: Briefcase },
-        ],
-      },
+      // {
+      //   label: "GIG",
+      //   path: "/gig",
+      //   icon: StarIcon,
+      //   children: [
+      //     { label: "GIG Dashboard", path: "/gig", icon: Layers },
+      //     { label: "Post Internship/Job", path: "/gig/Jobs", icon: Briefcase },
+      //   ],
+      // },
       { label: "Helpdesk", path: "/helpdesk", icon: HeartHandshake },
-      { label: "Suggest Feature", path: "/suggestFeature", icon: FaRegStickyNote },
     ];
   }, [hasPrizeMode, hasProductMode, hasSocietyMode, bothTypes]);
 
-
-
   const handleNavigation = (path) => {
     router.push(path);
-    setIsOpen(false);
+    setOpenDropdown(null);
   };
 
   const toggleDropdown = (label) => {
@@ -150,130 +143,126 @@ const Sidebar = () => {
   };
 
   return (
-    <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 z-40 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`
-          fixed md:sticky top-0 left-0 h-screen z-50
-          transition-[width,transform] duration-200 ease-out
-          bg-gradient-to-br from-oohpoint-primary-1 via-oohpoint-primary-1 to-oohpoint-primary-1/90
-          border-r border-white/10
-          flex flex-col shadow-2xl
-          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-          ${isHovered ? "w-72" : "w-20"}
-        `}
-      >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-design-bg bg-contain bg-center bg-repeat opacity-[0.03]" />
+    <aside 
+      className="fixed top-0 left-0 h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-sm z-50 will-change-transform"
+      style={{ 
+        width: isExpanded ? '280px' : '72px',
+        transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+      }}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => {
+        setIsExpanded(false);
+        setOpenDropdown(null);
+      }}
+    >
+      
+      {/* Content */}
+      <div className="relative flex flex-col h-full">
+        
+        {/* Header */}
+        <div className="flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+          <div
+            className="flex items-center gap-3 cursor-pointer overflow-hidden"
+            onClick={() => handleNavigation("/dashboard")}
+          >
+            <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+              <img 
+                src="/logo.png" 
+                alt="logo" 
+                className="rounded-md w-full h-full object-cover" 
+                loading="lazy"
+              />
+            </div>
+            <span 
+              className="text-slate-900 dark:text-white font-semibold text-base whitespace-nowrap"
+              style={{
+                opacity: isExpanded ? 1 : 0,
+                transition: 'opacity 0.15s ease-in-out',
+                pointerEvents: isExpanded ? 'auto' : 'none'
+              }}
+            >
+              OOHPoint
+            </span>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="relative flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-6 border-b border-white/10">
-            <div
-              className="flex items-center gap-3 overflow-hidden cursor-pointer"
-              onClick={() => handleNavigation("/")}
-            >
-              <Image
-                src="/logo.png"
-                alt="logo"
-                width={40}
-                height={40}
-                className="w-12 rounded-xl h-12 object-contain"
-                priority
-              />
-              {isHovered && (
-                <span className="text-white font-bold text-lg whitespace-nowrap">
-                  OOHPoint
-                </span>
-              )}
-            </div>
-
-            {/* Mobile Close Button */}
-            <button
-              onClick={() => setIsOpen(false)}
-              className="md:hidden text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <IoClose className="text-2xl" />
-            </button>
+        {/* Navigation */}
+        <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+          <div 
+            className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-3"
+            style={{
+              opacity: isExpanded ? 1 : 0,
+              transition: 'opacity 0.15s ease-in-out'
+            }}
+          >
+            Navigation
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
-            {isHovered && (
-              <div className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3 px-3">
-                Menu
-              </div>
-            )}
-
-            {menuItems.map(({ label, path, icon: Icon, badge, children }) => {
+          <div className="space-y-0.5">
+            {menuItems.map(({ label, path, icon: Icon, children }) => {
               const isActive = pathname === path;
               const isDropdownOpen = openDropdown === label;
 
               return (
-                <div key={path}>
+                <div key={`${label}-${path}`}>
                   {/* Parent Button */}
                   <button
                     onClick={() =>
                       children ? toggleDropdown(label) : handleNavigation(path)
                     }
                     className={`
-                      w-full group relative flex items-center gap-3 px-3 py-3.5 rounded-xl
-                      transition-colors duration-150
+                      w-full relative flex items-center gap-3 px-3 py-2.5 rounded-lg group/item
+                      transition-all duration-150
                       ${isActive
-                        ? "bg-white/15 text-white"
-                        : "text-white/70 hover:bg-white/8 hover:text-white"}
+                        ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200"}
                     `}
                   >
+                    {/* Active Indicator */}
                     {isActive && (
-                      <div className="absolute left-0 w-1 h-10 bg-white rounded-r-full -translate-x-3" />
+                      <div className="absolute left-0 w-1 h-5 bg-purple-600 dark:bg-purple-500 rounded-r-full -translate-x-2" />
                     )}
 
-                    {/* Icon */}
-                    <div className="relative flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                      <Icon className="text-[22px]" strokeWidth={isActive ? 2.5 : 2} />
+                    {/* Icon Container */}
+                    <div className="relative flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                      <Icon 
+                        className="w-5 h-5" 
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
                     </div>
 
-                    {/* Label */}
-                    {isHovered && (
-                      <div className="flex items-center justify-between flex-1 min-w-0">
-                        <span className="text-sm font-medium whitespace-nowrap">
-                          {label}
-                        </span>
+                    {/* Label and Chevron */}
+                    <div 
+                      className="flex items-center justify-between flex-1 min-w-0"
+                      style={{
+                        opacity: isExpanded ? 1 : 0,
+                        transition: 'opacity 0.15s ease-in-out'
+                      }}
+                    >
+                      <span className="text-[13px] font-medium whitespace-nowrap">
+                        {label}
+                      </span>
 
-                        {children ? (
-                          isDropdownOpen ? (
-                            <ChevronUp className="w-4 h-4" />
+                      {children && (
+                        <div className="ml-auto">
+                          {isDropdownOpen ? (
+                            <ChevronUp className="w-4 h-4 opacity-50" />
                           ) : (
-                            <ChevronDown className="w-4 h-4" />
-                          )
-                        ) : (
-                          badge && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg">
-                              <Sparkles className="w-2.5 h-2.5" />
-                              {badge}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    )}
+                            <ChevronDown className="w-4 h-4 opacity-50" />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </button>
 
                   {/* Dropdown Children */}
-                  {children && isDropdownOpen && isHovered && (
-                    <div className="ml-8 mt-1 space-y-1 transition-all duration-300">
+                  {children && isDropdownOpen && isExpanded && (
+                    <div 
+                      className="ml-9 mt-0.5 space-y-0.5 overflow-hidden"
+                      style={{
+                        animation: 'slideDown 0.2s ease-out'
+                      }}
+                    >
                       {children.map((sub) => {
                         const isSubActive = pathname === sub.path;
                         const SubIcon = sub.icon || Layers;
@@ -281,12 +270,15 @@ const Sidebar = () => {
                           <button
                             key={sub.path}
                             onClick={() => handleNavigation(sub.path)}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isSubActive
-                              ? "bg-white/15 text-white"
-                              : "text-white/70 hover:text-white hover:bg-white/10"
-                              }`}
+                            className={`
+                              w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+                              transition-all duration-150
+                              ${isSubActive
+                                ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
+                                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/30"}
+                            `}
                           >
-                            <SubIcon className="w-4 h-4 opacity-80" />
+                            <SubIcon className="w-4 h-4 opacity-70" strokeWidth={2} />
                             <span>{sub.label}</span>
                           </button>
                         );
@@ -296,10 +288,55 @@ const Sidebar = () => {
                 </div>
               );
             })}
-          </nav>
+          </div>
+        </nav>
+
+        {/* Footer Hint */}
+        <div 
+          className="px-4 py-3 border-t border-slate-200 dark:border-slate-800 text-center"
+          style={{
+            opacity: isExpanded ? 1 : 0,
+            transition: 'opacity 0.15s ease-in-out'
+          }}
+        >
+          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            Hover to expand
+          </p>
         </div>
-      </aside>
-    </>
+      </div>
+
+      <style jsx>{`
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .scrollbar-thumb-slate-300::-webkit-scrollbar-thumb {
+          background-color: rgb(203 213 225);
+          border-radius: 2px;
+        }
+
+        .dark .scrollbar-thumb-slate-700::-webkit-scrollbar-thumb {
+          background-color: rgb(51 65 85);
+          border-radius: 2px;
+        }
+      `}</style>
+    </aside>
   );
 };
 

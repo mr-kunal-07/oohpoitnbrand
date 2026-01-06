@@ -1,151 +1,196 @@
 "use client";
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
 import { auth, db } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const MyContext = createContext();
 
+// Custom hook with error checking
+export const useAuth = () => {
+  const context = useContext(MyContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within MyProvider');
+  }
+  return context;
+};
+
 const MyProvider = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  // User State
   const [user, setUser] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [uid, setUid] = useState("");
+
+  // Data State
   const [campaigns, setCampaigns] = useState([]);
   const [vendors, setVendors] = useState([]);
-  const [offers, setOffers] = useState([]);
-  const [uid, setUid] = useState("");
-  const [isHovered, setIsHovered] = useState(false);
-  const [authUser, setAuthUser] = useState(false);
-  const [promotors, setPromotors] = useState([]);
+  const [users, setUsers] = useState([]); // ✅
+
+  // Loading State
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const pathname = usePathname();
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        toast.error("Log in first");
-        router.push("/sign-in"); // Adjust the route as per your application
-      } else {
-        setAuthUser(true);
-        fetchUser(user.uid);
-        fetchUsers();
-        setUid(user.uid);
-        router.push("/dashboard"); // Redirect to /dashboard if user is logged in
-      }
-    });
-
-    // Clean up subscription on unmount
-    return () => unsubscribe();
-  }, [router]);
-
-  const fetchUser = async (uid) => {
+  // Fetch brand
+  const fetchUser = useCallback(async (userId) => {
     try {
-      const res = await fetch("/api/getBrands");
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch users");
+      const res = await fetch("/api/getbrand");
+      const brands = await res.json();
+      const userBrand = brands.find((b) => b.uid === userId);
+      
+      if (userBrand) {
+        setUser(userBrand);
+        return userBrand;
       }
-
-      const userData = await res.json();
-      const data = userData.find((user) => user.uid === uid);
-
-      setUser(data);
-      fetchCampaigns(data);
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("Error fetching user:", error);
+      toast.error("Failed to load user data");
     }
-  };
+    return null;
+  }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("/api/getUsers");
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch users");
-      }
-
-      const userData = await res.json();
-      setUsers(userData);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
-
-  const fetchCampaigns = async (brand) => {
+  // Fetch campaigns
+  const fetchCampaigns = useCallback(async (brandId) => {
     try {
       const res = await fetch("/api/getCampaigns");
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch campaigns");
-      }
-
-      const campaignsData = await res.json();
-
-      const brandCampaigns = campaignsData.filter(
-        (campaign) => campaign.client === brand.brandId
-      );
-
-      setCampaigns(brandCampaigns.reverse());
-      fetchVendors(brandCampaigns.reverse());
+      const allCampaigns = await res.json();
+      const userCampaigns = allCampaigns
+        .filter((c) => c.client === brandId)
+        .reverse();
+      
+      setCampaigns(userCampaigns);
+      return userCampaigns;
     } catch (error) {
       console.error("Error fetching campaigns:", error);
+      toast.error("Failed to load campaigns");
+      setCampaigns([]);
     }
-  };
+    return [];
+  }, []);
 
-  const fetchVendors = async (campaigns) => {
+  // Fetch vendors
+  const fetchVendors = useCallback(async (campaignsList) => {
     try {
-      const vendors = [];
-      for (const campaign of campaigns) {
-        for (const vendor of campaign.vendors) {
-          const docRef = doc(db, "vendors", vendor.vendorId);
-          const docSnap = await getDoc(docRef);
-          vendors.push(docSnap.data());
-        }
+      const vendorIds = new Set();
+      
+      campaignsList.forEach((campaign) => {
+        campaign.vendors?.forEach((v) => {
+          if (v.vendorId) vendorIds.add(v.vendorId);
+        });
+      });
+
+      if (vendorIds.size === 0) {
+        setVendors([]);
+        return;
       }
-      setVendors(vendors);
+
+      const vendorIdsArray = Array.from(vendorIds);
+      const allVendors = [];
+
+      // Firestore 'in' query supports max 10 items
+      for (let i = 0; i < vendorIdsArray.length; i += 10) {
+        const batch = vendorIdsArray.slice(i, i + 10);
+        const q = query(collection(db, "vendors"), where("__name__", "in", batch));
+        const snapshot = await getDocs(q);
+        
+        snapshot.forEach((doc) => {
+          allVendors.push({ id: doc.id, ...doc.data() });
+        });
+      }
+
+      setVendors(allVendors);
     } catch (error) {
       console.error("Error fetching vendors:", error);
+      toast.error("Failed to load vendors");
+      setVendors([]);
     }
-  };
+  }, []);
 
-  const fetchPromotors = async () => {
+  // ✅ Fetch users (customers)
+  const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch("/api/getPromotors");
+      console.log("🔄 Fetching users from API...");
+      const res = await fetch("/api/getusers");
+      
       if (!res.ok) {
-        throw new Error("Failed to fetch promotors");
+        throw new Error(`API returned ${res.status}`);
       }
-      const promotorsData = await res.json();
-      setPromotors(promotorsData);
+      
+      const allUsers = await res.json();
+      console.log("✅ Users fetched:", allUsers?.length);
+      setUsers(allUsers);
+      return allUsers;
     } catch (error) {
-      console.error("Error fetching promotors:", error);
+      console.error("❌ Error fetching users:", error);
+      toast.error("Failed to load users");
+      setUsers([]);
     }
-  };
+    return [];
+  }, []);
 
-  if (!authUser && pathname != "/sign-in") return null;
+  // ✅ Load user data - NOW INCLUDES fetchUsers
+  const loadUserData = useCallback(async (userId) => {
+    const userBrand = await fetchUser(userId);
+    
+    if (userBrand?.brandId) {
+      const userCampaigns = await fetchCampaigns(userBrand.brandId);
+      
+      if (userCampaigns.length > 0) {
+        await fetchVendors(userCampaigns);
+      }
+      
+      // ✅ FETCH USERS HERE
+      await fetchUsers();
+    }
+  }, [fetchUser, fetchCampaigns, fetchVendors, fetchUsers]);
+
+  // Check auth
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUid(firebaseUser.uid);
+        await loadUserData(firebaseUser.uid);
+      } else {
+        // Clear all data on logout
+        setUser(null);
+        setUid("");
+        setCampaigns([]);
+        setVendors([]);
+        setUsers([]); // ✅ Also clear users
+        router.push("/");
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [loadUserData, router]);
+
+  // Show loader while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <MyContext.Provider
       value={{
-        isOpen,
-        setIsOpen,
-        isHovered,
-        setIsHovered,
+        // User
         user,
-        setUser,
+        uid,
+
+        // Data
         campaigns,
         vendors,
-        promotors,
-        setCampaigns,
+        users, // ✅ EXPOSE USERS
+
+        // Methods
         fetchCampaigns,
         fetchUser,
-        users,
-        uid,
-        offers,      // ADD THIS
-        setOffers,   // ADD THIS
+        fetchUsers, // ✅ EXPOSE fetchUsers (optional, but good to have)
       }}
     >
       {children}

@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -8,12 +7,12 @@ const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0];
     return (
-      <div className="bg-white px-4 py-3 rounded-lg shadow-lg border border-gray-100">
-        <p className="text-sm font-semibold text-gray-800">{data.name}</p>
+      <div className="bg-slate-800 px-4 py-3 rounded-lg shadow-xl border border-gray-700">
+        <p className="text-sm font-semibold text-gray-200">{data.name}</p>
         <p className="text-lg font-bold" style={{ color: data.payload.color }}>
           {data.value.toLocaleString()}
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400">
           {((data.value / data.payload.total) * 100).toFixed(1)}%
         </p>
       </div>
@@ -28,17 +27,17 @@ const CustomLegend = ({ data }) => (
       <div key={entry.name} className="flex flex-col items-center group cursor-default transition-transform hover:scale-105">
         <div className="flex items-center gap-2 mb-1">
           <div
-            className="w-3 h-3 rounded-full shadow-sm"
+            className="w-3 h-3 rounded-full shadow-lg"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
             {entry.name}
           </span>
         </div>
         <span className="text-2xl font-bold" style={{ color: entry.color }}>
           {entry.value.toLocaleString()}
         </span>
-        <span className="text-xs text-gray-400 mt-0.5">
+        <span className="text-xs text-gray-500 mt-0.5">
           {((entry.value / entry.total) * 100).toFixed(1)}%
         </span>
       </div>
@@ -54,17 +53,17 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
   ];
 
   return (
-    <div className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+    <div className="w-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border border-gray-700 overflow-hidden hover:shadow-xl transition-shadow duration-300">
       {/* Header */}
-      <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+      <div className="flex justify-between items-center px-6 py-4 border-b border-gray-700 bg-slate-800/50">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">
+          <h3 className="text-lg font-bold text-white">
             {chartTitle || "Users"}
           </h3>
-          <p className="text-sm text-gray-500 mt-0.5">Gender Distribution</p>
+          <p className="text-sm text-gray-400 mt-0.5">Gender Distribution</p>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent">
+          <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">
             {total.toLocaleString()}
           </div>
           <div className="text-xs text-gray-500 uppercase tracking-wide">Total</div>
@@ -73,7 +72,7 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
 
       {/* Chart */}
       <div className="py-6">
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Tooltip content={<CustomTooltip />} />
 
@@ -88,7 +87,7 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
               endAngle={-270}
               dataKey="value"
               stroke="none"
-              fill="#E5E7EB"
+              fill="#374151"
             />
             <Pie
               data={[data[0]]}
@@ -100,10 +99,10 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
               startAngle={90}
               endAngle={90 - calculateAngle(data[0].value, total)}
               strokeLinecap="round"
-              stroke="white"
+              stroke="#1e293b"
               strokeWidth={2}
             >
-              <Cell fill={data[0].color} className="drop-shadow-md" />
+              <Cell fill={data[0].color} />
             </Pie>
 
             {/* Female - Middle Ring */}
@@ -117,7 +116,7 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
               endAngle={-270}
               dataKey="value"
               stroke="none"
-              fill="#E5E7EB"
+              fill="#374151"
             />
             <Pie
               data={[data[1]]}
@@ -129,10 +128,10 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
               startAngle={90}
               endAngle={90 - calculateAngle(data[1].value, total)}
               strokeLinecap="round"
-              stroke="white"
+              stroke="#1e293b"
               strokeWidth={2}
             >
-              <Cell fill={data[1].color} className="drop-shadow-md" />
+              <Cell fill={data[1].color} />
             </Pie>
 
             {/* Other - Inner Ring */}
@@ -146,7 +145,7 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
               endAngle={-270}
               dataKey="value"
               stroke="none"
-              fill="#E5E7EB"
+              fill="#374151"
             />
             <Pie
               data={[data[2]]}
@@ -158,10 +157,10 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
               startAngle={90}
               endAngle={90 - calculateAngle(data[2].value, total)}
               strokeLinecap="round"
-              stroke="white"
+              stroke="#1e293b"
               strokeWidth={2}
             >
-              <Cell fill={data[2].color} className="drop-shadow-md" />
+              <Cell fill={data[2].color} />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
@@ -173,4 +172,4 @@ const SprukoPieChart = ({ male, female, other, total, chartTitle }) => {
   );
 };
 
-export default SprukoPieChart
+export default SprukoPieChart;

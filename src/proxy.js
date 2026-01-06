@@ -2,24 +2,24 @@ import { NextResponse } from "next/server"
 
 export function proxy(req) {
     const { pathname } = req.nextUrl
-
     const token = req.cookies.get("token")?.value
 
-    const publicRoutes = ["/"]
+    // ✅ Authenticated user trying to access "/"
+    if (token && pathname === "/") {
+        return NextResponse.redirect(new URL("/dashboard", req.url))
+    }
 
-    // ✅ Authenticated user
+    // ✅ Authenticated user accessing protected routes
     if (token) {
-        if (publicRoutes.includes(pathname)) {
-            return NextResponse.redirect(new URL("/dashboard", req.url))
-        }
         return NextResponse.next()
     }
 
-    // ❌ Not authenticated
-    if (publicRoutes.includes(pathname)) {
+    // ❌ Not authenticated trying to access "/"
+    if (pathname === "/") {
         return NextResponse.next()
     }
 
+    // ❌ Not authenticated trying to access protected routes
     return NextResponse.redirect(new URL("/", req.url))
 }
 
