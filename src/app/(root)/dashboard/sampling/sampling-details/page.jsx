@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState, useContext } from "react";
 import { Loader2, TrendingUp, Package, Target, MapPin, Users, Calendar, Activity, Clock, BarChart3, Camera, MessageSquare, Filter, Download, Share2, Star } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
