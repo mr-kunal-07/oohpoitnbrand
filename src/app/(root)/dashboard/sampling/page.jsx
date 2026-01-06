@@ -7,8 +7,8 @@ import SprukoCard from "@/components/Spruko/SprukoCard";
 import SprukoPieChart from "@/components/Spruko/DemoGraphicChart";
 import DeviceBarChart from "@/components/Spruko/DeviceBarChart";
 import BrandGrowthAreaChart from "@/components/Vendors/BrandGrowthAreaChart";
-import BrandCampaigns from "@/components/BrandCampaigns";
 import { detectDevice } from "@/utils/deviceDetection";
+import SamplingCampaigns from "@/components/SamplingCampaigns";
 
 const SamplingDashboard = () => {
     const { campaigns = [], user, users = [] } = useContext(MyContext);
@@ -357,7 +357,7 @@ const SamplingDashboard = () => {
 
             {/* Campaigns Table */}
             <div className="mt-6">
-                <BrandCampaigns campaigns={brandCampaigns} />
+                <SamplingCampaigns campaigns={brandCampaigns} />
             </div>
         </div>
     );
