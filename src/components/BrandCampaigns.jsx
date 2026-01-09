@@ -9,78 +9,73 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  Loader2,
-  ArrowUp,
-  ArrowDown,
-  BarChart3,
-  Calendar,
-  TrendingUp,
-} from "lucide-react";
+import { Loader2, ArrowUp, ArrowDown, BarChart3, Calendar, TrendingUp } from "lucide-react";
 
-const BrandCampaigns = ({ campaigns }) => {
+const StatusBadge = ({ startDate, endDate, isPaused }) => {
+  if (isPaused) {
+    return (
+      <span className="inline-flex items-center text-xs font-semibold uppercase py-1.5 px-3 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
+        Paused
+      </span>
+    );
+  }
+
+  const currentDate = new Date().setHours(0, 0, 0, 0);
+  const start = new Date(startDate.seconds * 1000).setHours(0, 0, 0, 0);
+  const end = new Date(endDate.seconds * 1000).setHours(0, 0, 0, 0);
+
+  if (currentDate < start) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase py-1.5 px-3 bg-amber-50 text-amber-700 rounded-md border border-amber-200">
+        <Calendar className="w-3 h-3" />
+        Upcoming
+      </span>
+    );
+  }
+
+  if (currentDate > end) {
+    return (
+      <span className="inline-flex items-center text-xs font-semibold uppercase py-1.5 px-3 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
+        Closed
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase py-1.5 px-3 bg-green-50 text-green-700 rounded-md border border-green-200">
+      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+      Active
+    </span>
+  );
+};
+
+const BrandCampaigns = ({ campaigns = [] }) => {
   const [sorting, setSorting] = useState([{ id: "createdAt", desc: true }]);
   const router = useRouter();
-
-  const getStatus = (startDate, endDate, isPaused) => {
-    if (isPaused) {
-      return (
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase py-1.5 px-3 bg-gray-700/50 text-gray-400 rounded-md border border-gray-600/30">
-          Paused
-        </div>
-      );
-    }
-
-    const currentDate = new Date().setHours(0, 0, 0, 0);
-    const start = new Date(startDate.seconds * 1000).setHours(0, 0, 0, 0);
-    const end = new Date(endDate.seconds * 1000).setHours(0, 0, 0, 0);
-
-    if (currentDate < start) {
-      return (
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase py-1.5 px-3 bg-amber-500/20 text-amber-400 rounded-md border border-amber-500/30">
-          <Calendar className="w-3 h-3" />
-          Upcoming
-        </div>
-      );
-    } else if (currentDate > end) {
-      return (
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase py-1.5 px-3 bg-gray-700/50 text-gray-400 rounded-md border border-gray-600/30">
-          Closed
-        </div>
-      );
-    } else {
-      return (
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase py-1.5 px-3 bg-emerald-500/20 text-emerald-400 rounded-md border border-emerald-500/30">
-          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-          Active
-        </div>
-      );
-    }
-  };
 
   const columns = useMemo(
     () => [
       {
         accessorKey: "campaignName",
-        header: <div className="text-left font-semibold text-gray-300">Campaign Name</div>,
+        header: () => <div className="text-left font-semibold text-slate-700">Campaign Name</div>,
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-600/30 to-purple-600/30 flex-shrink-0 ring-2 ring-gray-700 shadow-md">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-purple-100 to-purple-200 flex-shrink-0 border border-slate-200">
               {row.original?.adCreativeImages?.[0] ? (
                 <Image
                   src={row.original.adCreativeImages[0]}
                   width={48}
                   height={48}
                   alt={row.getValue("campaignName") || "Campaign"}
-                  className="object-cover w-12 h-12"
+                  className="object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 flex items-center justify-center text-gray-500">
+                <div className="w-full h-full flex items-center justify-center text-slate-400">
                   <BarChart3 className="w-6 h-6" />
                 </div>
               )}
             </div>
-            <span className="font-medium text-gray-200">
+            <span className="font-medium text-slate-900">
               {row.getValue("campaignName") || "N/A"}
             </span>
           </div>
@@ -88,10 +83,10 @@ const BrandCampaigns = ({ campaigns }) => {
       },
       {
         accessorKey: "ipAddress",
-        header: <div className="text-center font-semibold text-gray-300">Engagements</div>,
+        header: () => <div className="text-center font-semibold text-slate-700">Engagements</div>,
         cell: ({ row }) => (
           <div className="text-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg font-semibold text-sm border border-indigo-500/30">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 rounded-lg font-semibold text-sm border border-purple-200">
               <TrendingUp className="w-3.5 h-3.5" />
               {row.getValue("ipAddress")?.length || 0}
             </span>
@@ -100,9 +95,9 @@ const BrandCampaigns = ({ campaigns }) => {
       },
       {
         accessorKey: "createdAt",
-        header: <div className="text-center font-semibold text-gray-300">Created At</div>,
+        header: () => <div className="text-center font-semibold text-slate-700">Created At</div>,
         cell: ({ row }) => (
-          <div className="text-center text-sm text-gray-400">
+          <div className="text-center text-sm text-slate-600">
             {moment.unix(row.getValue("createdAt")?.seconds).format("DD/MM/YY")}
           </div>
         ),
@@ -114,48 +109,46 @@ const BrandCampaigns = ({ campaigns }) => {
       },
       {
         accessorKey: "startDate",
-        header: <div className="text-center font-semibold text-gray-300">Start Date</div>,
+        header: () => <div className="text-center font-semibold text-slate-700">Start Date</div>,
         cell: ({ row }) => (
-          <div className="text-center text-sm text-gray-400">
+          <div className="text-center text-sm text-slate-600">
             {moment.unix(row.getValue("startDate")?.seconds).format("DD/MM/YY")}
           </div>
         ),
       },
       {
         accessorKey: "endDate",
-        header: <div className="text-center font-semibold text-gray-300">End Date</div>,
+        header: () => <div className="text-center font-semibold text-slate-700">End Date</div>,
         cell: ({ row }) => (
-          <div className="text-center text-sm text-gray-400">
+          <div className="text-center text-sm text-slate-600">
             {moment.unix(row.getValue("endDate")?.seconds).format("DD/MM/YY")}
           </div>
         ),
       },
       {
         accessorKey: "status",
-        header: <div className="text-right font-semibold text-gray-300">Status</div>,
+        header: () => <div className="text-right font-semibold text-slate-700">Status</div>,
         cell: ({ row }) => (
           <div className="flex justify-end">
-            {getStatus(
-              row.getValue("startDate"),
-              row.getValue("endDate"),
-              row.original?.isPaused
-            )}
+            <StatusBadge
+              startDate={row.getValue("startDate")}
+              endDate={row.getValue("endDate")}
+              isPaused={row.original?.isPaused}
+            />
           </div>
         ),
       },
       {
         accessorKey: "actions",
-        header: "",
+        header: () => null,
         cell: ({ row }) => (
           <div className="flex justify-center">
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-indigo-500/50 hover:scale-105 transition-all duration-200 cursor-pointer"
-              onClick={() => {
-                router.push(
-                  `/campaigns/campaign-details?campaignId=${row.original.id}`
-                );
-              }}
+              onClick={() =>
+                router.push(`/campaigns/campaign-details?campaignId=${row.original.id}`)
+              }
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition-colors"
             >
               <BarChart3 className="w-4 h-4" />
               Insights
@@ -173,100 +166,86 @@ const BrandCampaigns = ({ campaigns }) => {
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    },
+    state: { sorting },
   });
 
-  const toggleCreatedAtSorting = () => {
+  const toggleSorting = () => {
     setSorting((state) => {
-      const currentSorting = state.find((sort) => sort.id === "createdAt");
-      if (currentSorting) {
-        return currentSorting.desc
-          ? [{ id: "createdAt", desc: false }]
-          : [{ id: "createdAt", desc: true }];
-      }
-      return [{ id: "createdAt", desc: true }];
+      const current = state.find((sort) => sort.id === "createdAt");
+      return current?.desc
+        ? [{ id: "createdAt", desc: false }]
+        : [{ id: "createdAt", desc: true }];
     });
   };
 
+  const isNewestFirst = table.getState().sorting.find(({ id }) => id === "createdAt")?.desc;
+
   return (
-    <div className="bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl w-full p-2 md:p-5 shadow-2xl border border-gray-700">
-      {/* Header Section */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-2xl w-full p-4 md:p-6 shadow-sm border border-slate-200">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/50">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center shadow-sm">
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Campaigns List</h1>
-            <p className="text-gray-400 text-sm">
-              Manage and monitor all your campaigns
-            </p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Campaigns List</h1>
+            <p className="text-slate-500 text-sm">Manage and monitor all campaigns</p>
           </div>
         </div>
 
         {/* Sort Button */}
         <button
           type="button"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 border-2 border-gray-700 rounded-xl hover:border-indigo-500/50 hover:bg-slate-800/80 transition-all duration-200 font-medium text-sm text-gray-200"
-          onClick={toggleCreatedAtSorting}
+          onClick={toggleSorting}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors font-medium text-sm text-slate-700"
         >
-          {table.getState().sorting.find(({ id }) => id === "createdAt")?.desc ? (
+          {isNewestFirst ? (
             <>
-              <ArrowDown className="w-4 h-4 text-indigo-400" />
+              <ArrowDown className="w-4 h-4 text-purple-600" />
               <span>Newest First</span>
             </>
           ) : (
             <>
-              <ArrowUp className="w-4 h-4 text-indigo-400" />
+              <ArrowUp className="w-4 h-4 text-purple-600" />
               <span>Oldest First</span>
             </>
           )}
         </button>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-slate-900 rounded-2xl shadow-sm border border-gray-700 overflow-hidden">
+      {/* Table */}
+      <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
         {campaigns.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl h-96">
-            <Loader2 className="h-12 w-12 animate-spin text-indigo-500 mb-4" />
-            <p className="text-gray-400 font-medium">Loading campaigns...</p>
+          <div className="flex flex-col items-center justify-center h-96">
+            <Loader2 className="h-12 w-12 animate-spin text-purple-600 mb-4" />
+            <p className="text-slate-600 font-medium">Loading campaigns...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-slate-800 to-slate-900">
+            <table className="w-full min-w-[800px]">
+              <thead className="bg-slate-100">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="px-6 py-4 border-b-2 border-gray-700 text-xs uppercase tracking-wider text-gray-300"
+                        className="px-4 sm:px-6 py-4 border-b border-slate-200 text-xs uppercase tracking-wider"
                       >
                         {header.isPlaceholder
                           ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                          : flexRender(header.column.columnDef.header, header.getContext())}
                       </th>
                     ))}
                   </tr>
                 ))}
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-slate-800/50 transition-colors duration-150"
-                  >
+                  <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-6 py-5">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                      <td key={cell.id} className="px-4 sm:px-6 py-4">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
                   </tr>
@@ -276,6 +255,13 @@ const BrandCampaigns = ({ campaigns }) => {
           </div>
         )}
       </div>
+
+      {/* Mobile Scroll Hint */}
+      {campaigns.length > 0 && (
+        <p className="text-xs text-slate-500 text-center mt-3 sm:hidden">
+          Swipe left to see more →
+        </p>
+      )}
     </div>
   );
 };

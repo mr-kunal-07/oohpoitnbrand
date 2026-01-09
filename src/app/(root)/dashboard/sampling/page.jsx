@@ -6,13 +6,13 @@ import { Scan } from "lucide-react";
 import SprukoCard from "@/components/Spruko/SprukoCard";
 import SprukoPieChart from "@/components/Spruko/DemoGraphicChart";
 import DeviceBarChart from "@/components/Spruko/DeviceBarChart";
-import BrandGrowthAreaChart from "@/components/Vendors/BrandGrowthAreaChart";
+import BrandGrowthAreaChart from "./_components/BrandGrowthAreaChart";
 import { detectDevice } from "@/utils/deviceDetection";
 import SamplingCampaigns from "@/components/SamplingCampaigns";
 
 const SamplingDashboard = () => {
     const { campaigns = [], user, users = [] } = useContext(MyContext);
-    
+
     const [brandCampaigns, setBrandCampaigns] = useState([]);
     const [campaignsData, setCampaignsData] = useState({
         total: 0,
@@ -53,28 +53,28 @@ const SamplingDashboard = () => {
         const lineData = {};
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        
+
         data.forEach((item) => {
-            const createdAt = item.createdAt?.seconds 
-                ? new Date(item.createdAt.seconds * 1000) 
+            const createdAt = item.createdAt?.seconds
+                ? new Date(item.createdAt.seconds * 1000)
                 : new Date();
-            
+
             if (createdAt >= oneWeekAgo) {
                 const weekday = getWeekdayName(createdAt);
                 lineData[weekday] = (lineData[weekday] || 0) + 1;
             }
         });
-        
+
         return Object.entries(lineData).map(([name, value]) => ({ name, value }));
     };
 
     const getStatus = (startDate, endDate, isPaused) => {
         if (!startDate || !endDate) return "Draft";
-        
+
         const current = new Date().setHours(0, 0, 0, 0);
         const start = new Date(startDate.seconds * 1000).setHours(0, 0, 0, 0);
         const end = new Date(endDate.seconds * 1000).setHours(0, 0, 0, 0);
-        
+
         if (isPaused) return "Paused";
         if (current < start) return "Upcoming";
         if (current > end) return "Closed";
@@ -85,13 +85,13 @@ const SamplingDashboard = () => {
         if (campaign.isProductMode === true || campaign.mode === "ProductMode") {
             return true;
         }
-        
+
         if (Array.isArray(campaign.vendors) && campaign.vendors.length > 0) {
             return campaign.vendors.some(
                 (v) => v?.isProductMode === true || v?.mode === "ProductMode"
             );
         }
-        
+
         return false;
     };
 
@@ -102,7 +102,7 @@ const SamplingDashboard = () => {
                 const isBrandCampaign = c.client === user.brandId;
                 return isBrandCampaign && isProductModeCampaign(c);
             });
-            
+
             console.log("📊 Filtered ProductMode Campaigns:", filtered.length);
             setBrandCampaigns(filtered);
         }
@@ -134,19 +134,19 @@ const SamplingDashboard = () => {
         brandCampaigns.forEach((campaign) => {
             if (Array.isArray(campaign.ipAddress)) {
                 totalScans += campaign.ipAddress.length;
-                
+
                 campaign.ipAddress.forEach((scan) => {
                     allScans.push(scan);
-                    const scanDate = scan.createdAt 
-                        ? new Date(scan.createdAt) 
+                    const scanDate = scan.createdAt
+                        ? new Date(scan.createdAt)
                         : new Date();
-                    
+
                     if (scanDate >= oneWeekAgo) {
                         weeklyScans++;
                     }
                 });
             }
-            
+
             if (Array.isArray(campaign.locationIp)) {
                 uniqueScans += campaign.locationIp.length;
             }
@@ -187,15 +187,15 @@ const SamplingDashboard = () => {
             if (Array.isArray(campaign.ipAddress)) {
                 campaign.ipAddress.forEach(({ userId }) => {
                     if (!userId || processedUsers.has(userId)) return;
-                    
+
                     const user = users.find(
                         (u) => u.id === userId || u.uid === userId || u._id === userId
                     );
-                    
+
                     if (user) {
                         processedUsers.add(userId);
                         const gender = user.gender?.toLowerCase();
-                        
+
                         if (gender === "male") male++;
                         else if (gender === "female") female++;
                         else other++;
@@ -204,11 +204,11 @@ const SamplingDashboard = () => {
             }
         });
 
-        setUsersData({ 
-            male, 
-            female, 
-            other, 
-            total: male + female + other 
+        setUsersData({
+            male,
+            female,
+            other,
+            total: male + female + other
         });
     }, [users, brandCampaigns]);
 
@@ -230,8 +230,8 @@ const SamplingDashboard = () => {
                     // Check device from scan data
                     if (device) {
                         const deviceLower = device.toLowerCase();
-                        if (deviceLower.includes("ios") || 
-                            deviceLower.includes("iphone") || 
+                        if (deviceLower.includes("ios") ||
+                            deviceLower.includes("iphone") ||
                             deviceLower.includes("ipad")) {
                             deviceCounts.iOS++;
                         } else {
@@ -247,8 +247,8 @@ const SamplingDashboard = () => {
 
                     if (user?.device) {
                         const userDevice = user.device.toLowerCase();
-                        if (userDevice.includes("ios") || 
-                            userDevice.includes("iphone") || 
+                        if (userDevice.includes("ios") ||
+                            userDevice.includes("iphone") ||
                             userDevice.includes("ipad")) {
                             deviceCounts.iOS++;
                         } else {
@@ -269,15 +269,15 @@ const SamplingDashboard = () => {
             }
         });
 
-        setDeviceData({ 
-            Android: deviceCounts.Android, 
-            iOS: deviceCounts.iOS, 
-            total: totalDevices 
+        setDeviceData({
+            Android: deviceCounts.Android,
+            iOS: deviceCounts.iOS,
+            total: totalDevices
         });
     }, [users, brandCampaigns]);
 
     return (
-        <div className="overflow-y-auto py-4 px-2">
+        <div className="overflow-y-auto p-4 md:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full">
                 {/* Left main content */}
                 <div className="col-span-1 lg:col-span-3 flex flex-col gap-4">
@@ -319,7 +319,7 @@ const SamplingDashboard = () => {
                         <SprukoCard
                             title="Organic Traffic"
                             value={scansData.unique}
-                            increase={`+${scansData.weekly}`}
+                            increase={`+${scansData.unique}`}
                             color="text-green-500"
                             iconColor="text-red-500"
                             Icon={Scan}

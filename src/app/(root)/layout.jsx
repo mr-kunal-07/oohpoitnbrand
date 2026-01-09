@@ -8,7 +8,7 @@ export default function RootLayout({ children }) {
   return (
     <>
       <MyProvider>
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
             duration: 3000,
@@ -35,23 +35,23 @@ export default function RootLayout({ children }) {
             },
           }}
         />
-        
+
         {/* Main Layout Container */}
-        <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
-          
+        <div className="flex h-screen w-full overflow-hidden bg-linear-to-br from-blue-50 to-white">
+
           {/* Sidebar - Fixed position */}
           <Sidebar />
-          
+
           {/* Main Content Area */}
-          <div 
+          <div
             className="flex flex-col flex-1 h-screen overflow-hidden transition-[margin-left] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
             style={{ marginLeft: '72px' }}
           >
             {/* Header - Sticky at top */}
             <Header />
-            
+
             {/* Content Area - Scrollable */}
-            <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 dark:bg-slate-900 custom-scrollbar">
+            <main className="flex-1 overflow-y-auto overflow-x-hidden bg-linear-to-br from-blue-50 to-white custom-scrollbar">
               <div className="w-full h-full">
                 {children}
               </div>

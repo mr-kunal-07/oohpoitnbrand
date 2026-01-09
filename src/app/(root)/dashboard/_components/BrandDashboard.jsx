@@ -84,37 +84,37 @@ const BrandDashboard = () => {
     }).length;
   }, [convertTimestampToDate]);
 
-const calculateLineData = useCallback((data) => {
-  const result = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const calculateLineData = useCallback((data) => {
+    const result = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  // Prepare last 7 days with 0
-  const dayMap = {};
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const label = getWeekdayName(d);
-    dayMap[label] = 0;
-  }
-
-  // Fill actual data
-  data.forEach((item) => {
-    const createdAt = convertTimestampToDate(item.createdAt);
-    const label = getWeekdayName(createdAt);
-
-    if (label in dayMap) {
-      dayMap[label] += 1;
+    // Prepare last 7 days with 0
+    const dayMap = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const label = getWeekdayName(d);
+      dayMap[label] = 0;
     }
-  });
 
-  // Convert to array in correct order
-  Object.keys(dayMap).forEach((day) => {
-    result.push({ name: day, value: dayMap[day] });
-  });
+    // Fill actual data
+    data.forEach((item) => {
+      const createdAt = convertTimestampToDate(item.createdAt);
+      const label = getWeekdayName(createdAt);
 
-  return result;
-}, [convertTimestampToDate, getWeekdayName]);
+      if (label in dayMap) {
+        dayMap[label] += 1;
+      }
+    });
+
+    // Convert to array in correct order
+    Object.keys(dayMap).forEach((day) => {
+      result.push({ name: day, value: dayMap[day] });
+    });
+
+    return result;
+  }, [convertTimestampToDate, getWeekdayName]);
 
 
   const getStatus = useCallback((startDate, endDate, isPaused) => {
@@ -338,14 +338,14 @@ const calculateLineData = useCallback((data) => {
   }
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-slate-50 dark:bg-slate-900">
+    <div className="w-full h-full overflow-y-auto bg-gray-100">
       <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
-          
+
           {/* Left Main Content - 3 columns */}
           <div className="col-span-1 lg:col-span-3 flex flex-col gap-4 lg:gap-6">
-            
+
             {/* Metric Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4">
               <SprukoCard
@@ -384,7 +384,7 @@ const calculateLineData = useCallback((data) => {
               <SprukoCard
                 title="Unique Engagements"
                 value={scansData.unique}
-                increase={`+${scansData.weekly}`}
+                increase={`+${scansData.unique}`}
                 color="text-green-500"
                 iconColor="text-red-500"
                 Icon={Scan}
