@@ -1,25 +1,8 @@
 import { NextResponse } from "next/server";
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDa4cYL7wLR8rJn1C8MXyUVVxsRb2aaugg",
-    authDomain: "theoohpoint.firebaseapp.com",
-    projectId: "theoohpoint",
-    storageBucket: "theoohpoint.appspot.com",
-    messagingSenderId: "1039836854227",
-    appId: "1:1039836854227:web:f3e4c448e44ab53fc0e126",
-    measurementId: "G-C2N44JCB4K"
-};
 
-// Init Firebase
-if (!getApps().length) {
-    initializeApp(firebaseConfig);
-}
-const db = getFirestore();
-
-// Helper function to extract userId from lead ID
-// Format: userId_campaignId_timestamp
 function extractUserIdFromLeadId(leadId) {
     if (!leadId) return null;
     const parts = leadId.split('_');
@@ -29,11 +12,11 @@ function extractUserIdFromLeadId(leadId) {
 // Helper function to fetch user details
 async function fetchUserDetails(userId) {
     if (!userId) return null;
-    
+
     try {
         const userDocRef = doc(db, "users", userId);
         const userDoc = await getDoc(userDocRef);
-        
+
         if (userDoc.exists()) {
             return {
                 id: userDoc.id,
@@ -89,13 +72,13 @@ export async function GET(request) {
         let leads = snapshot.docs.map((doc) => {
             const data = doc.data();
             const userId = extractUserIdFromLeadId(doc.id);
-            
+
             return {
                 id: doc.id,
                 ...data,
                 userId: userId,
-                createdAt: data.createdAt?.toDate?.() 
-                    ? data.createdAt.toDate().toISOString() 
+                createdAt: data.createdAt?.toDate?.()
+                    ? data.createdAt.toDate().toISOString()
                     : data.createdAt || new Date().toISOString()
             };
         });
@@ -118,7 +101,7 @@ export async function GET(request) {
         // Merge user details with leads
         leads = leads.map(lead => {
             const userDetails = userDetailsMap[lead.userId];
-            
+
             return {
                 ...lead,
                 user: userDetails || null,

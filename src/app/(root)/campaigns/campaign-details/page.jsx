@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useContext, useMemo } from "react";
+import { useEffect, useState, useContext, useMemo, useCallback } from "react";
 import { MyContext } from "@/context/MyContext";
 import {
   TrendingUp, Users, MapPin, Calendar, Activity, Award, Clock,
@@ -13,7 +13,6 @@ import AreaDistributionTable from "../_components/AreaDistributionTable";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import SurveyTable from "@/components/SurveyTable";
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const GOOGLE_MAPS_KEY = "AIzaSyCX0Ok8zf-FVwHOKQKvJ0__82QSLcaW1bA";
 
 const getAddress = async (latitude, longitude) => {
@@ -29,10 +28,18 @@ const getAddress = async (latitude, longitude) => {
     const locationDetails = { state: null, city: null, neighbourhood: null, pincode: null };
 
     components.forEach((component) => {
-      if (component.types.includes("administrative_area_level_1")) locationDetails.state = component.long_name;
-      if (component.types.includes("locality")) locationDetails.city = component.long_name;
-      if (component.types.includes("sublocality_level_1")) locationDetails.neighbourhood = component.long_name;
-      if (component.types.includes("postal_code")) locationDetails.pincode = component.long_name;
+      if (component.types.includes("administrative_area_level_1")) {
+        locationDetails.state = component.long_name;
+      }
+      if (component.types.includes("locality")) {
+        locationDetails.city = component.long_name;
+      }
+      if (component.types.includes("sublocality_level_1")) {
+        locationDetails.neighbourhood = component.long_name;
+      }
+      if (component.types.includes("postal_code")) {
+        locationDetails.pincode = component.long_name;
+      }
     });
 
     return locationDetails;
@@ -69,19 +76,19 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color = "purple", sparkli
   }[color];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 border border-slate-200">
-      <div className="flex items-start justify-between">
-        <p className="text-slate-600 text-base font-medium">{title}</p>
-        <div className={`p-3 rounded-xl ${colors.bg} border ${colors.border}`}>
-          <Icon className={`w-5 h-5 ${colors.text}`} />
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 border border-slate-200">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-slate-600 text-sm sm:text-base font-medium">{title}</p>
+        <div className={`p-2 sm:p-3 rounded-xl ${colors.bg} border ${colors.border}`}>
+          <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${colors.text}`} />
         </div>
       </div>
       <div>
-        <p className="text-3xl font-semibold text-slate-900 mb-1">{value}</p>
-        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+        <p className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-1">{value}</p>
+        {subtitle && <p className="text-xs sm:text-sm text-slate-500">{subtitle}</p>}
       </div>
       {sparkline && (
-        <div className="mt-4 h-12 -mx-2">
+        <div className="mt-3 sm:mt-4 h-10 sm:h-12 -mx-2">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={sparkline}>
               <defs>
@@ -118,14 +125,17 @@ const CampaignDetail = () => {
   const [surveyData, setSurveyData] = useState([]);
   const [timeRange, setTimeRange] = useState("30d");
 
+  // Engagement Metrics
   const engagementMetrics = useMemo(() => {
-    if (!campaign?.ipAddress) {
+    if (!campaign?.ipAddress?.length) {
       return { uniqueEngagements: 0, repeatEngagements: 0, totalEngagements: 0 };
     }
 
     const userIdCounts = {};
     campaign.ipAddress.forEach((scan) => {
-      if (scan.userId) userIdCounts[scan.userId] = (userIdCounts[scan.userId] || 0) + 1;
+      if (scan.userId) {
+        userIdCounts[scan.userId] = (userIdCounts[scan.userId] || 0) + 1;
+      }
     });
 
     const uniqueUsers = Object.keys(userIdCounts).length;
@@ -138,8 +148,9 @@ const CampaignDetail = () => {
     };
   }, [campaign?.ipAddress]);
 
+  // Demographics
   const demographics = useMemo(() => {
-    if (!campaign?.ipAddress || !users?.length) {
+    if (!campaign?.ipAddress?.length || !users?.length) {
       return { male: 0, female: 0, other: 0, total: 0 };
     }
 
@@ -160,6 +171,7 @@ const CampaignDetail = () => {
     return { male, female, other, total: male + female + other };
   }, [campaign?.ipAddress, users]);
 
+  // Redemption Metrics
   const redemptionMetrics = useMemo(() => {
     if (!campaignId || !users?.length) {
       return { totalRedeemed: 0, totalCoupons: 0, redemptionRate: "0.00" };
@@ -180,32 +192,33 @@ const CampaignDetail = () => {
     return { totalRedeemed: redeemedCoupons, totalCoupons, redemptionRate: rate.toFixed(2) };
   }, [campaignId, users]);
 
+  // Engagement Rate
   const engagementRate = useMemo(() => {
     if (!engagementMetrics.totalEngagements) return "0.00";
     return ((engagementMetrics.uniqueEngagements / engagementMetrics.totalEngagements) * 100).toFixed(2);
   }, [engagementMetrics]);
 
-  const { timelineData } = useMemo(() => {
-    if (!campaign?.ipAddress) return { timelineData: [] };
+  // Timeline Data
+  const timelineData = useMemo(() => {
+    if (!campaign?.ipAddress?.length) return [];
 
-    const scans = campaign.ipAddress;
     const scansByDate = {};
 
-    scans.forEach((scan) => {
+    campaign.ipAddress.forEach((scan) => {
       const date = new Date(scan.createdAt).toISOString().split("T")[0];
       scansByDate[date] = (scansByDate[date] || 0) + 1;
     });
 
     const sortedDates = Object.keys(scansByDate).sort();
     const last30Days = sortedDates.slice(-30);
-    const timelineChartData = last30Days.map((date) => ({
+
+    return last30Days.map((date) => ({
       date: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       scans: scansByDate[date] || 0,
     }));
-
-    return { timelineData: timelineChartData };
   }, [campaign?.ipAddress]);
 
+  // Campaign Dates
   const campaignDates = useMemo(() => {
     if (!campaign?.startDate || !campaign?.endDate) {
       return { daysRemaining: 0, totalDays: 0, completedDays: 0, timelineProgress: 0 };
@@ -220,54 +233,61 @@ const CampaignDetail = () => {
     const completedDays = Math.max(0, Math.ceil((now - startDate) / 86400000));
     const timelineProgress = totalDays > 0 ? Math.min(100, (completedDays / totalDays) * 100) : 0;
 
-    return { daysRemaining, totalDays, completedDays, timelineProgress: timelineProgress.toFixed(1) };
+    return {
+      daysRemaining,
+      totalDays,
+      completedDays,
+      timelineProgress: timelineProgress.toFixed(1)
+    };
   }, [campaign?.startDate, campaign?.endDate]);
 
-  useEffect(() => {
-    const calculateVendorShopWiseScans = async () => {
-      if (!campaignId || !users?.length) return;
+  // Fetch Vendors
+  const fetchVendors = useCallback(async () => {
+    if (!campaignId || !users?.length) return;
 
-      try {
-        const res = await fetch("/api/getvendors");
-        if (!res.ok) return;
+    try {
+      const res = await fetch("/api/getvendors");
+      if (!res.ok) return;
 
-        const vendorsData = await res.json();
-        setVendors(vendorsData);
+      const vendorsData = await res.json();
+      setVendors(vendorsData);
 
-        const vendorMap = {};
+      const vendorMap = {};
 
-        users.forEach((user) => {
-          user?.coupons?.forEach((coupon) => {
-            if (coupon.campaignId === campaignId && coupon.vendorId) {
-              const vendor = vendorsData.find((v) =>
-                v.vendorId === coupon.vendorId || v.vid === coupon.vendorId || v.id === coupon.vendorId
-              );
+      users.forEach((user) => {
+        user?.coupons?.forEach((coupon) => {
+          if (coupon.campaignId === campaignId && coupon.vendorId) {
+            const vendor = vendorsData.find((v) =>
+              v.vendorId === coupon.vendorId || v.vid === coupon.vendorId || v.id === coupon.vendorId
+            );
 
-              if (vendor) {
-                if (vendorMap[coupon.vendorId]) {
-                  vendorMap[coupon.vendorId].totalScans++;
-                } else {
-                  vendorMap[coupon.vendorId] = {
-                    vendorId: coupon.vendorId,
-                    businessName: vendor.businessName,
-                    vendorLogo: vendor.vendorLogo,
-                    totalScans: 1,
-                  };
-                }
+            if (vendor) {
+              if (vendorMap[coupon.vendorId]) {
+                vendorMap[coupon.vendorId].totalScans++;
+              } else {
+                vendorMap[coupon.vendorId] = {
+                  vendorId: coupon.vendorId,
+                  businessName: vendor.businessName,
+                  vendorLogo: vendor.vendorLogo,
+                  totalScans: 1,
+                };
               }
             }
-          });
+          }
         });
+      });
 
-        setVendorShopWiseScans(Object.values(vendorMap));
-      } catch (error) {
-        console.error("Error fetching vendors:", error);
-      }
-    };
-
-    calculateVendorShopWiseScans();
+      setVendorShopWiseScans(Object.values(vendorMap));
+    } catch (error) {
+      console.error("Error fetching vendors:", error);
+    }
   }, [campaignId, users]);
 
+  useEffect(() => {
+    fetchVendors();
+  }, [fetchVendors]);
+
+  // Load Campaign
   useEffect(() => {
     if (campaignId && campaigns?.length > 0) {
       const foundCampaign = campaigns.find((v) => v.id === campaignId);
@@ -275,39 +295,38 @@ const CampaignDetail = () => {
     }
   }, [campaignId, campaigns]);
 
+  // Process Locations
   useEffect(() => {
     const processLocations = async () => {
-      if (!campaign?.location) {
+      if (!campaign?.location?.length) {
         setLocations([]);
         setAreaWiseDistribution([]);
         return;
       }
 
-      setLocations(campaign.targetLocations);
+      setLocations(campaign.targetLocations || []);
 
       try {
-        const locationData = campaign.location.map((location) =>
+        const locationPromises = campaign.location.map((location) =>
           getAddress(location.latitude, location.longitude)
         );
-        const response = await Promise.all(locationData);
+        const addressResults = await Promise.all(locationPromises);
 
-        setAreaWiseDistribution(
-          Object.values(
-            response.reduce((acc, address) => {
-              const state = address?.state || "Unknown State";
-              const city = address?.city || "Unknown City";
-              const neighbourhood = address?.neighbourhood || "Unknown Area";
-              const pincode = address?.pincode || "Unknown Pincode";
-              const key = `${state}|${city}|${neighbourhood}|${pincode}`;
+        const areaMap = addressResults.reduce((acc, address) => {
+          const state = address?.state || "Unknown State";
+          const city = address?.city || "Unknown City";
+          const neighbourhood = address?.neighbourhood || "Unknown Area";
+          const pincode = address?.pincode || "Unknown Pincode";
+          const key = `${state}|${city}|${neighbourhood}|${pincode}`;
 
-              if (!acc[key]) {
-                acc[key] = { state, city, neighbourhood, pincode, scans: 0 };
-              }
-              acc[key].scans += 1;
-              return acc;
-            }, {})
-          )
-        );
+          if (!acc[key]) {
+            acc[key] = { state, city, neighbourhood, pincode, scans: 0 };
+          }
+          acc[key].scans += 1;
+          return acc;
+        }, {});
+
+        setAreaWiseDistribution(Object.values(areaMap));
       } catch (error) {
         console.error("Error processing locations:", error);
         setAreaWiseDistribution([]);
@@ -315,8 +334,9 @@ const CampaignDetail = () => {
     };
 
     processLocations();
-  }, [campaign?.location]);
+  }, [campaign?.location, campaign?.targetLocations]);
 
+  // Process Survey Data
   useEffect(() => {
     if (!campaignId || !users?.length) return;
 
@@ -339,13 +359,15 @@ const CampaignDetail = () => {
             };
           }
 
-          survey.selectedOption.forEach((index) => {
+          survey.selectedOption?.forEach((index) => {
             if (processedSurveys[questionKey]?.options[index] !== undefined) {
               processedSurveys[questionKey].options[index] += 1;
             }
           });
 
-          processedSurveys[questionKey].userIds.push(userData.id);
+          if (userData.id) {
+            processedSurveys[questionKey].userIds.push(userData.id);
+          }
         }
       });
     });
@@ -355,11 +377,11 @@ const CampaignDetail = () => {
 
   if (!campaign) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <div className="animate-spin">
-          <RefreshCw className="w-12 h-12 text-purple-600 mb-4" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 px-4">
+        <div className="animate-spin mb-4">
+          <RefreshCw className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
         </div>
-        <p className="text-slate-600 font-medium">Loading campaign details...</p>
+        <p className="text-slate-600 font-medium text-sm sm:text-base">Loading campaign details...</p>
       </div>
     );
   }
@@ -367,15 +389,17 @@ const CampaignDetail = () => {
   const status = getStatus(campaign);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-6 px-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 py-4 sm:py-6 px-3 sm:px-4">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">{campaign.campaignName}</h2>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">
+                {campaign.campaignName}
+              </h2>
               <span
-                className={`px-3 py-1 text-xs font-bold rounded-md ${campaign.isPaused
+                className={`px-2.5 sm:px-3 py-1 text-xs font-bold rounded-md ${campaign.isPaused
                   ? "bg-amber-50 text-amber-700 border border-amber-200"
                   : "bg-green-50 text-green-700 border border-green-200"
                   }`}
@@ -383,41 +407,43 @@ const CampaignDetail = () => {
                 {campaign.isPaused ? "PAUSED" : status.toUpperCase()}
               </span>
             </div>
-            <p className="text-slate-500 text-sm mt-1">
+            <p className="text-slate-500 text-xs sm:text-sm">
               {campaign.description || "No description available"}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-slate-700"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 border border-slate-200 rounded-lg text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-slate-700"
             >
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
               <option value="90d">Last 90 days</option>
               <option value="all">All time</option>
             </select>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm text-slate-700">
-              <Filter className="w-4 h-4" />
-              Filters
+            <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium text-xs sm:text-sm text-slate-700">
+              <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Filters</span>
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium text-sm text-slate-700">
-              <Download className="w-4 h-4" />
-              Export
+            <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium text-xs sm:text-sm text-slate-700">
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Export</span>
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm shadow-sm">
-              <RefreshCw className="w-4 h-4" />
-              Refresh
+            <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-xs sm:text-sm shadow-sm">
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
 
         {/* Primary KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KPICard
             title="Total Engagements"
-            value={engagementMetrics.totalEngagements}
+            value={engagementMetrics.totalEngagements.toLocaleString()}
             subtitle={`${engagementMetrics.uniqueEngagements} unique visitors`}
             icon={Activity}
             color="purple"
@@ -425,7 +451,7 @@ const CampaignDetail = () => {
           />
           <KPICard
             title="Unique Engagements"
-            value={engagementMetrics.uniqueEngagements}
+            value={engagementMetrics.uniqueEngagements.toLocaleString()}
             subtitle="Distinct users"
             icon={Users}
             color="blue"
@@ -433,7 +459,7 @@ const CampaignDetail = () => {
           />
           <KPICard
             title="Repeat Engagements"
-            value={engagementMetrics.repeatEngagements}
+            value={engagementMetrics.repeatEngagements.toLocaleString()}
             subtitle="Return visitors"
             icon={TrendingUp}
             color="green"
@@ -450,7 +476,7 @@ const CampaignDetail = () => {
         </div>
 
         {/* Secondary KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KPICard
             title="Engagement Rate"
             value={`${engagementRate}%`}
@@ -461,7 +487,7 @@ const CampaignDetail = () => {
           />
           <KPICard
             title="Organic Traffic"
-            value={redemptionMetrics.totalRedeemed}
+            value={redemptionMetrics.totalRedeemed.toLocaleString()}
             subtitle="Non-redeemed users"
             icon={Users}
             color="indigo"
@@ -486,12 +512,12 @@ const CampaignDetail = () => {
         </div>
 
         {/* Timeline Chart */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-purple-600" />
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-slate-200">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
             Distribution Timeline
           </h3>
-          <div className="h-64">
+          <div className="h-48 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={timelineData}>
                 <defs>
@@ -501,14 +527,24 @@ const CampaignDetail = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="date" stroke="#64748B" style={{ fontSize: "12px" }} />
-                <YAxis stroke="#64748B" style={{ fontSize: "12px" }} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#64748B"
+                  style={{ fontSize: "11px" }}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  stroke="#64748B"
+                  style={{ fontSize: "11px" }}
+                  tick={{ fontSize: 11 }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#ffffff",
                     border: "1px solid #E2E8F0",
                     borderRadius: "8px",
                     color: "#1e293b",
+                    fontSize: "12px",
                   }}
                 />
                 <Area
@@ -525,8 +561,8 @@ const CampaignDetail = () => {
 
         {/* Vendor Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-900">Vendor Shop Wise Scans</h2>
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200">
+            <h2 className="text-base sm:text-lg font-semibold text-slate-900">Vendor Shop Wise Scans</h2>
           </div>
           <div className="max-h-96 overflow-y-auto">
             <VendorTable vendorShopWiseScans={vendorShopWiseScans} />
@@ -534,16 +570,16 @@ const CampaignDetail = () => {
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full">
-            <div className="px-6 py-5 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Geographic Heat Map</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200">
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900">Geographic Heat Map</h2>
             </div>
-            <div className="h-[400px] p-4">
+            <div className="h-[300px] sm:h-[400px] p-3 sm:p-4">
               {locations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-500">
-                  <MapPin className="w-12 h-12 mb-3 opacity-30" />
-                  <p className="text-sm">No location data available</p>
+                  <MapPin className="w-10 h-10 sm:w-12 sm:h-12 mb-3 opacity-30" />
+                  <p className="text-xs sm:text-sm">No location data available</p>
                 </div>
               ) : (
                 <HeatMap locations={locations} />
@@ -560,30 +596,10 @@ const CampaignDetail = () => {
 
         {/* Area Distribution */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="m-3 overflow-y-auto max-h-96">
+          <div className="p-3 sm:p-4 overflow-y-auto max-h-96">
             <AreaDistributionTable areaWiseDistribution={areaWiseDistribution} />
           </div>
         </div>
-
-        {/* Target Locations */}
-        {campaign.targetLocations?.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-red-500" />
-              Target Locations ({campaign.targetLocations.length})
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {campaign.targetLocations.map((location, idx) => (
-                <span
-                  key={idx}
-                  className="bg-purple-50 text-purple-700 px-4 py-2 rounded-md text-sm font-medium border border-purple-200 hover:bg-purple-100 transition-colors"
-                >
-                  {location}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Survey Section */}
         <SurveyTable surveyData={surveyData} users={users} campaignId={campaignId} />

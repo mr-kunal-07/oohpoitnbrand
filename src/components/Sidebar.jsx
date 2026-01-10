@@ -1,33 +1,20 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { IoHomeOutline } from "react-icons/io5";
-import {
-  ShoppingBagIcon,
-  TicketPercent,
-  Users,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  Layers,
-  LifeBuoy,
-  Star,
-  Phone,
-  Calendar,
-} from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
+import { Home, ShoppingBag, TicketPercent, Users, Sparkles, ChevronDown, ChevronUp, Layers, LifeBuoy, Star, Phone, Calendar, X } from "lucide-react";
 import { useCampaignTypes } from "@/hook/useCampaignTypes";
 
 const COLLAPSED_WIDTH = "72px";
 const EXPANDED_WIDTH = "280px";
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileOpen, onMobileClose }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const { hasPrizeMode, hasProductMode, hasSocietyMode, bothTypes } = useCampaignTypes();
 
-  const getDashboardConfig = () => {
+  const getDashboardConfig = useCallback(() => {
     const configs = {
       all: [
         { label: "Campaigns", path: "/dashboard", icon: Layers },
@@ -55,7 +42,7 @@ const Sidebar = () => {
     const hasSocietyOnly = hasSocietyMode && !hasProductMode && !hasPrizeMode;
     const hasProductOnly = hasProductMode && !hasPrizeMode && !hasSocietyMode;
 
-    const baseDashboard = { label: "Dashboard", icon: IoHomeOutline };
+    const baseDashboard = { label: "Dashboard", icon: Home };
 
     if (hasAll) return { ...baseDashboard, path: "/dashboard", children: configs.all };
     if (hasSocietyProduct) return { ...baseDashboard, path: "/dashboard", children: configs.societyProduct };
@@ -65,58 +52,82 @@ const Sidebar = () => {
     if (hasProductOnly) return { ...baseDashboard, path: "/dashboard/sampling" };
 
     return { ...baseDashboard, path: "/dashboard" };
-  };
+  }, [hasPrizeMode, hasProductMode, hasSocietyMode, bothTypes]);
 
   const menuItems = useMemo(() => [
     getDashboardConfig(),
-    { label: "My Campaigns", path: "/campaigns", icon: ShoppingBagIcon },
-    {
-      label: "Push Offers",
-      path: "/offers",
-      icon: TicketPercent
-    },
-  ], [hasPrizeMode, hasProductMode, hasSocietyMode, bothTypes]);
+    { label: "My Campaigns", path: "/campaigns", icon: ShoppingBag },
+    { label: "Push Offers", path: "/offers", icon: TicketPercent },
+  ], [getDashboardConfig]);
 
-  const generalItems = [
+  const generalItems = useMemo(() => [
     { label: "Support Center", path: "/support", icon: LifeBuoy },
     { label: "Write A Review", path: "/review", icon: Star },
     { label: "Contact Sales", path: "/contact-sales", icon: Phone },
-    { label: "Book a Meeting", path: "/book-meeting", icon: Calendar },
-  ];
+    { label: "Book a Meeting", path: "https://cal.com/tech.oohpoint-qbhfsg/30min", icon: Calendar },
+  ], []);
 
-  const navigate = (path) => {
+  const navigate = useCallback((path) => {
     router.push(path);
     setOpenDropdown(null);
-  };
+    onMobileClose?.();
+  }, [router, onMobileClose]);
 
-  const toggleDropdown = (label) => {
+  const toggleDropdown = useCallback((label) => {
     setOpenDropdown((prev) => (prev === label ? null : label));
-  };
+  }, []);
 
-  const handleMouseEnter = () => setIsExpanded(true);
-  const handleMouseLeave = () => {
+  const handleMouseEnter = useCallback(() => setIsExpanded(true), []);
+  const handleMouseLeave = useCallback(() => {
     setIsExpanded(false);
     setOpenDropdown(null);
-  };
+  }, []);
 
   const fadeStyle = { opacity: isExpanded ? 1 : 0, transition: "opacity 0.15s ease-in-out" };
 
   return (
-    <aside
-      className="fixed top-0 left-0 h-screen bg-white border-r border-slate-200 flex flex-col shadow-sm z-50 will-change-transform"
-      style={{ width: isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: "width 0.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div className="relative flex flex-col h-full">
+    <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-white border-r border-slate-200 flex flex-col shadow-lg z-50 transition-transform duration-300 lg:shadow-sm ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
+        style={{
+          width: isMobileOpen ? '280px' : isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH,
+          transition: isMobileOpen ? 'transform 0.3s ease-in-out' : 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Close Button - Mobile Only */}
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-lg transition-colors z-10"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5 text-slate-600" />
+        </button>
 
         {/* Header */}
         <div className="flex items-center h-16 px-4 border-b border-slate-200 flex-shrink-0">
           <div className="flex items-center gap-3 cursor-pointer overflow-hidden" onClick={() => navigate("/dashboard")}>
             <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-              <img src="/logo.png" alt="logo" className="rounded-md w-full h-full object-cover" loading="lazy" />
+              <img src="/logo.png" alt="OOHPoint Logo" className="rounded-md w-full h-full object-cover" loading="lazy" />
             </div>
-            <span className="text-slate-900 font-semibold text-base whitespace-nowrap" style={{ ...fadeStyle, pointerEvents: isExpanded ? "auto" : "none" }}>
+            <span
+              className="text-slate-900 font-semibold text-base whitespace-nowrap"
+              style={{
+                opacity: (isMobileOpen || isExpanded) ? 1 : 0,
+                transition: 'opacity 0.15s ease-in-out'
+              }}
+            >
               OOHPoint
             </span>
           </div>
@@ -124,7 +135,10 @@ const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3" style={fadeStyle}>
+          <div
+            className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3"
+            style={{ opacity: (isMobileOpen || isExpanded) ? 1 : 0, transition: 'opacity 0.15s ease-in-out' }}
+          >
             Navigation
           </div>
 
@@ -148,13 +162,18 @@ const Sidebar = () => {
                       <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
                     </div>
 
-                    <div className="flex items-center justify-between flex-1 min-w-0" style={fadeStyle}>
+                    <div
+                      className="flex items-center justify-between flex-1 min-w-0"
+                      style={{ opacity: (isMobileOpen || isExpanded) ? 1 : 0, transition: 'opacity 0.15s ease-in-out' }}
+                    >
                       <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
-                      {children && (isDropdownOpen ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />)}
+                      {children && (
+                        isDropdownOpen ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />
+                      )}
                     </div>
                   </button>
 
-                  {children && isDropdownOpen && isExpanded && (
+                  {children && isDropdownOpen && (isMobileOpen || isExpanded) && (
                     <div className="ml-9 mt-0.5 space-y-0.5 animate-slideDown">
                       {children.map((sub) => {
                         const isSubActive = pathname === sub.path;
@@ -182,7 +201,10 @@ const Sidebar = () => {
 
           {/* General Section */}
           <div className="mt-6">
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3" style={fadeStyle}>
+            <div
+              className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3"
+              style={{ opacity: (isMobileOpen || isExpanded) ? 1 : 0, transition: 'opacity 0.15s ease-in-out' }}
+            >
               General
             </div>
             <div className="space-y-0.5">
@@ -203,7 +225,10 @@ const Sidebar = () => {
                       <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
                     </div>
 
-                    <span className="text-[13px] font-medium whitespace-nowrap flex-1 text-left" style={fadeStyle}>
+                    <span
+                      className="text-[13px] font-medium whitespace-nowrap flex-1 text-left"
+                      style={{ opacity: (isMobileOpen || isExpanded) ? 1 : 0, transition: 'opacity 0.15s ease-in-out' }}
+                    >
                       {label}
                     </span>
                   </button>
@@ -212,39 +237,40 @@ const Sidebar = () => {
             </div>
           </div>
         </nav>
-      </div>
 
-      <style jsx>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
+        <style jsx>{`
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-4px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+
+          .animate-slideDown {
+            animation: slideDown 0.2s ease-out;
           }
-        }
 
-        .animate-slideDown {
-          animation: slideDown 0.2s ease-out;
-        }
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+          }
 
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+          }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: rgb(203 213 225);
-          border-radius: 2px;
-        }
-      `}</style>
-    </aside>
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgb(203 213 225);
+            border-radius: 2px;
+          }
+        `}</style>
+      </aside>
+    </>
   );
 };
+
 
 export default Sidebar;

@@ -347,7 +347,7 @@ const BrandDashboard = () => {
           <div className="col-span-1 lg:col-span-3 flex flex-col gap-4 lg:gap-6">
 
             {/* Metric Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4">
               <SprukoCard
                 title="Total Campaigns"
                 value={campaignsData.total}

@@ -1,4 +1,6 @@
 "use client";
+import React from 'react'
+import { NotebookTabs } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import {
   FiChevronDown, FiChevronUp, FiUser, FiBarChart2, FiPieChart,
@@ -656,7 +658,7 @@ export default function SurveyTable({ surveyData = [], users = [], campaignId })
     <div className="bg-white rounded-xl w-full my-6 shadow-sm border border-slate-200">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 p-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">Survey Details</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 flex gap-2 items-center"><NotebookTabs className="h-8 w-8 text-purple-600" />Survey Details</h2>
         </div>
         <button
           onClick={() => setShowOverallInsightsModal(true)}
@@ -690,8 +692,8 @@ export default function SurveyTable({ surveyData = [], users = [], campaignId })
                 const filteredRespondents = getFilteredRespondents(respondents);
 
                 return (
-                  <>
-                    <tr key={index} className="hover:bg-slate-50 transition-colors">
+                  <React.Fragment key={survey.id ?? index}>
+                    <tr className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 sm:px-6 py-4">
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 border border-blue-200 text-blue-600 font-semibold text-sm">
@@ -829,7 +831,7 @@ export default function SurveyTable({ surveyData = [], users = [], campaignId })
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })
             )}
