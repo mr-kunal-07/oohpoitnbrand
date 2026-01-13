@@ -65,7 +65,8 @@ const SamplingCampaignDetail = () => {
         completedDays: 0,
         activeLocations: 0,
         todayDistribution: 0,
-        uniqueRecipients: 0,
+        totalAdEngagements: 0,
+
     });
     const [timelineData, setTimelineData] = useState({
         monthlyDistribution: [],
@@ -160,8 +161,8 @@ const SamplingCampaignDetail = () => {
 
         // Calculate metrics
         const targetSamples = campaign?.targetScans || 0;
-        const totalDistributed = campaign?.ipAddress?.length || 0;
-        const uniqueUsers = new Set(
+        const totalAdEngagements = campaign?.ipAddress?.length || 0;
+        const totalDistributed = new Set(
             (campaign?.ipAddress || []).map(scan => scan.userId).filter(Boolean)
         ).size;
 
@@ -197,7 +198,7 @@ const SamplingCampaignDetail = () => {
             completedDays,
             activeLocations: campaign?.targetLocations?.length || 0,
             todayDistribution,
-            uniqueRecipients: uniqueUsers,
+            totalAdEngagements,
         });
 
         // Calculate timeline data
@@ -317,10 +318,6 @@ const SamplingCampaignDetail = () => {
                                     <Download className="w-4 h-4" />
                                     <span className="hidden lg:inline">Export</span>
                                 </button>
-                                <button className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm shadow-sm whitespace-nowrap">
-                                    <Share2 className="w-4 h-4" />
-                                    <span className="hidden lg:inline">Share</span>
-                                </button>
                             </div>
                         </div>
 
@@ -358,17 +355,17 @@ const SamplingCampaignDetail = () => {
                 {/* KPI Cards Row 1 - Responsive Grid */}
                 <div className="grid grid-cols-2 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
                     <KPICard title="Total Target Samples" value={metrics.totalTargetSamples.toLocaleString()} icon={Target} color="purple" />
-                    <KPICard title="Total Distributed" value={metrics.totalDistributed.toLocaleString()} subtitle={`${metrics.completionPercentage}% of target`} icon={Package} color="blue" />
+                    <KPICard title="Total Distributed" value={metrics.totalDistributed.toString()} subtitle={`${metrics.completionPercentage}% of target`} icon={Package} color="blue" />
                     <KPICard title="Campaign Completion" value={`${metrics.completionPercentage}%`} subtitle={`${metrics.remainingSamples} remaining`} icon={Activity} color="green" />
                     <KPICard title="Remaining Samples" value={metrics.remainingSamples.toLocaleString()} subtitle={`${metrics.completionPercentage}% completed`} icon={Clock} color="orange" />
                 </div>
 
                 {/* KPI Cards Row 2 - Responsive Grid */}
                 <div className="grid grid-cols-2 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+                    <KPICard title="Total Ad Engagements" value={metrics.totalAdEngagements.toString()} subtitle="Engagements" icon={Users} color="teal" />
                     <KPICard title="Campaign Timeline" value={`${metrics.completedDays}/${metrics.plannedDays}`} subtitle={metrics.plannedDays > 0 ? `${((metrics.completedDays / metrics.plannedDays) * 100).toFixed(0)}% complete` : "N/A"} icon={Calendar} color="pink" />
                     <KPICard title="Active Locations" value={metrics.activeLocations.toString()} subtitle={`${metrics.activeLocations} ${metrics.activeLocations === 1 ? 'location' : 'locations'}`} icon={MapPin} color="orange" />
                     <KPICard title="Today's Distribution" value={metrics.todayDistribution.toString()} subtitle="Samples today" icon={TrendingUp} color="indigo" />
-                    <KPICard title="Unique Recipients" value={metrics.uniqueRecipients.toString()} subtitle="Distinct users" icon={Users} color="teal" />
                 </div>
 
                 {/* Distribution Timeline Chart */}

@@ -77,17 +77,15 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color = "purple", sparkli
 
   return (
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 border border-slate-200">
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between ">
         <p className="text-slate-600 text-sm sm:text-base font-medium">{title}</p>
         <div className={`p-2 sm:p-3 rounded-xl ${colors.bg} border ${colors.border}`}>
           <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${colors.text}`} />
         </div>
       </div>
-      <div>
-        <p className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-1">{value}</p>
-        {subtitle && <p className="text-xs sm:text-sm text-slate-500">{subtitle}</p>}
-      </div>
-      {sparkline && (
+      <p className="text-2xl sm:text-4xl font-semibold text-slate-900 mb-1">{value}</p>
+      {subtitle && <p className="text-xs sm:text-sm text-slate-500">{subtitle}</p>}
+      {/* {sparkline && (
         <div className="mt-3 sm:mt-4 h-10 sm:h-12 -mx-2">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={sparkline}>
@@ -107,7 +105,7 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color = "purple", sparkli
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
@@ -392,7 +390,7 @@ const CampaignDetail = () => {
     <div className="min-h-screen bg-slate-50 py-4 sm:py-6 px-3 sm:px-4">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">
@@ -431,10 +429,6 @@ const CampaignDetail = () => {
             <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors font-medium text-xs sm:text-sm text-slate-700">
               <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Export</span>
-            </button>
-            <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-xs sm:text-sm shadow-sm">
-              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
