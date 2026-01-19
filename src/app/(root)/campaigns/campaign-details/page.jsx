@@ -412,6 +412,13 @@ const CampaignDetail = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2 sm:gap-3">
+            <a
+              href={`/campaigns/attribution?campaignId=${campaignId}`}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-xs sm:text-sm"
+            >
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Advanced Attribution</span>
+            </a>
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
